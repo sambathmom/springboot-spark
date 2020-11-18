@@ -24,7 +24,7 @@ public class SparkExternalApiController {
     }
 
     @GetMapping("/spark/data")
-    public Map<String, Object> getData() {
+    public String getData() {
         return sparkExternalApiService.getData();
     }
 }
