@@ -1,22 +1,20 @@
 package springboot.test.javaspark.service;
 
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.sql.Column;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
-import org.apache.spark.util.LongAccumulator;
 import org.json.JSONObject;
-import org.json4s.jackson.Serialization;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
-import static org.apache.spark.sql.functions.*;
+import static org.apache.spark.sql.functions.explode;
+import static org.apache.spark.sql.functions.max;
 
 @Service
 public class SparkExternalApiService {
@@ -29,6 +27,7 @@ public class SparkExternalApiService {
 
     @Autowired
     private JavaSparkContext javaSparkContext;
+
     public String getData() {
 
         //======== Start initail JSON Data for test
@@ -86,18 +85,18 @@ public class SparkExternalApiService {
 
 
         dfDataContent.createOrReplaceTempView("data_content");
-       // var dfMaxAge = dfDataContent.select("select * from data_content where age = " + max(dfDataContent.col("age"))).toDF();
-      //  dfMaxAge.show();
+        var dfMaxAge = dfDataContent.select("*").toDF();
+        dfMaxAge.show();
         var dfDataContentMaxAge = dfDataContent.select(max(dfDataContent.col("age")).alias("age"));
         dfDataContentMaxAge.show();
 
 
         //========== Test JavaRDD
-        JavaRDD<String> lines = javaSparkContext.textFile("src/main/resources/wordcount.txt");
-        JavaRDD<Integer> lineLengths = lines.map(s -> s.length());
-        System.out.println("======== lineLengths " + lineLengths);
-        int totalLength = lineLengths.reduce((a, b) -> a + b);
-        System.out.println("============ totalLength " + totalLength);
+//        JavaRDD<String> lines = javaSparkContext.textFile("src/main/resources/wordcount.txt");
+//        JavaRDD<Integer> lineLengths = lines.map(s -> s.length());
+//        System.out.println("======== lineLengths " + lineLengths);
+//        int totalLength = lineLengths.reduce((a, b) -> a + b);
+//        System.out.println("============ totalLength " + totalLength);
 
 //        var dfDataContentMaxAgeRow = dfDataContent.withColumn("age", dfDataContent.col("age"))
 //                                     .withColumn("name", dfDataContent.col("name"))
@@ -108,15 +107,16 @@ public class SparkExternalApiService {
 
 
         //========= Accumulator
-        LongAccumulator accum = javaSparkContext.sc().longAccumulator();
-        javaSparkContext.parallelize(Arrays.asList(1, 2, 3, 4)).foreach(x -> {
-            accum.add(x);
-        });
-        accum.value();
-        // returns 10
-        System.out.println("============Accumulator: " + accum.value());
+//        LongAccumulator accum = javaSparkContext.sc().longAccumulator();
+//        javaSparkContext.parallelize(Arrays.asList(1, 2, 3, 4)).foreach(x -> {
+//            accum.add(x);
+//        });
+//        accum.value();
+//        // returns 10
+//        System.out.println("============Accumulator: " + accum.value());
 
         return age;
     }
 
 }
+
