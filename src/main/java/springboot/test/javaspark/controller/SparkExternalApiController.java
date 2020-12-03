@@ -27,4 +27,15 @@ public class SparkExternalApiController {
     public String getData() {
         return sparkExternalApiService.getData();
     }
+
+
+    @GetMapping("/spark/data-frame")
+    public String testSparkDF() throws ClassNotFoundException {
+        return sparkExternalApiService.testSparkDF();
+    }
+
+    @GetMapping("/spark/data-frame/join")
+    public String sparkDataFrameJoin(){
+        return sparkExternalApiService.dataFrameJoin();
+    }
 }

@@ -2,19 +2,20 @@ package springboot.test.javaspark.service;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.sql.Dataset;
-import org.apache.spark.sql.Row;
-import org.apache.spark.sql.SparkSession;
+import org.apache.spark.api.java.function.MapFunction;
+import org.apache.spark.sql.*;
+import org.apache.spark.util.LongAccumulator;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import springboot.test.javaspark.model.Person;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.apache.spark.sql.functions.explode;
-import static org.apache.spark.sql.functions.max;
+import static org.apache.spark.sql.functions.*;
+
 
 @Service
 public class SparkExternalApiService {
@@ -75,6 +76,9 @@ public class SparkExternalApiService {
         //======== GroupBy
         dfDataContent.groupBy("age").count().show();
 
+        //===== Sort
+        dfDataContent.sort(dfDataContent.col("age").desc()).show();
+
         //======= Filter dataFrame
         dfDataContent = dfDataContent.filter(dfDataContent.col("age").gt(20));
         dfDataContent.show();
@@ -89,6 +93,10 @@ public class SparkExternalApiService {
         dfMaxAge.show();
         var dfDataContentMaxAge = dfDataContent.select(max(dfDataContent.col("age")).alias("age"));
         dfDataContentMaxAge.show();
+
+        //===== Expr
+        dfDataContent = dfDataContent.withColumn("name_id", expr("name"));
+        dfDataContent.show();
 
 
         //========== Test JavaRDD
@@ -116,6 +124,102 @@ public class SparkExternalApiService {
 //        System.out.println("============Accumulator: " + accum.value());
 
         return age;
+    }
+
+    public String testSparkDF() throws ClassNotFoundException {
+        Dataset<Row> peopleDataset = sparkSession.read().option("multiLine", true)
+                                                    .json("src/main/resources/people.json");
+        peopleDataset.show();
+
+        Dataset<Row> dataDataset = sparkSession.read().option("multiLine", true)
+                                .json("src/main/resources/data.json");
+        dataDataset.show();
+
+        //Join 2 table
+        Dataset<Row> joinPeopleDataDataset = peopleDataset.
+                join(dataDataset, dataDataset.col(";").equalTo(peopleDataset.col("people_id")))
+                .select("id","name");
+        joinPeopleDataDataset.show();
+
+        //Create data frame with class
+        Dataset<Row> personClassDataset= sparkSession.createDataFrame(Arrays.asList(
+                new Person(1,"Data1",10),
+                new Person(2,"Data2",10),
+                new Person(3,"Data3",20),
+                new Person(4,"Data4",22)
+        ), Person.class);
+        personClassDataset.show();
+
+        //Drop field
+        personClassDataset.drop("age").show();
+
+        // Encoders for most common types are provided in class Encoders
+        Encoder<Integer> integerEncoder = Encoders.INT();
+        Dataset<Integer> primitiveDS = sparkSession.createDataset(Arrays.asList(1, 2, 3), integerEncoder);
+        Dataset<Integer> transformedDS = primitiveDS.map(
+                (MapFunction<Integer, Integer>) value -> value + 1,
+                integerEncoder);
+        transformedDS.collect(); // Returns [2, 3, 4]
+        transformedDS.show();
+
+        //======= Load data from db
+//        Class.forName("com.mysql.jdbc.Driver");
+//        String url = "jdbc:mysql://192.168.2.4:3306/skypoint_db?user=root;password=";
+//        Dataset<Row> df = sparkSession
+//                .read()
+//                .format("jdbc")
+//                .option("url", url)
+//                .option("dbtable", "account")
+//                .load();
+//        df.show();
+
+        LongAccumulator accum = javaSparkContext.sc().longAccumulator();
+        javaSparkContext.parallelize(Arrays.asList(1, 2, 3, 4)).foreach(x -> accum.add(x));
+        accum.value();
+        System.out.println("============ Accumulator: " + accum.value());
+        return  "Hello spark DF";
+    }
+
+    public String dataFrameJoin() {
+        Dataset<Row> peopleDataset = sparkSession.read().option("multiLine", true)
+                .json("src/main/resources/people.json");
+        Dataset<Row> dataDataset = sparkSession.read().option("multiLine", true)
+                .json("src/main/resources/data.json");
+
+        //======== Join df and drop one of duplicate column
+        Dataset<Row> joinDf = peopleDataset.join(dataDataset, peopleDataset.col("people_id").equalTo(
+                dataDataset.col("id")), "inner")
+                .drop(dataDataset.col("name"));
+        joinDf.show();
+
+        //======== Read json
+        Dataset<Row> shipmentDf = sparkSession.read()
+                .option("multiLine", true)
+                .json("src/main/resources/shipment.json");
+
+        //======= Make it 3DNF
+        shipmentDf = shipmentDf
+                .withColumn("supplierName", shipmentDf.col("supplier.name"))
+                .withColumn("supplierCity", shipmentDf.col("supplier.city"))
+                .withColumn("supplierCountry", shipmentDf.col("supplier.country"))
+                .drop("supplier")
+                .withColumn("items", explode(shipmentDf.col("books")))
+                .drop("books");
+
+        shipmentDf = shipmentDf
+                .withColumn("itemTitle", shipmentDf.col("items.title"))
+                .withColumn("itemQty", shipmentDf.col("items.qty"))
+                .drop("items");
+        shipmentDf.show();
+
+        shipmentDf.createOrReplaceTempView("shipment_detail");
+        Dataset<Row> bookCountDf = sparkSession.sql("SELECT count(*) AS titlCount FROM shipment_detail");
+        bookCountDf.show();
+
+        //====== NestedJoin
+        //Dataset<Row> nestedJoin = functions.nest
+
+        return "Hello join data frame";
     }
 
 }

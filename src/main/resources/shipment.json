@@ -1,0 +1,19 @@
+{
+  "shipmentId" : 12,
+  "date" : "2020-12-02",
+  "supplier" : {
+    "name" : "Special supplier",
+    "city" : "Phnom Penh",
+    "country"  : "Cambodia"
+  },
+  "books" : [
+    {
+      "title" : "Spark with Test",
+      "qty" : 10
+    },
+    {
+      "title" : "Spark with Action",
+      "qty" : 11
+    }
+  ]
+}
