@@ -32,6 +32,9 @@ public class SparkUdfService {
         peopleDataset = peopleDataset.withColumn("udfName", functions.callUDF("returnName"));
         peopleDataset.show();
 
+        //============== Set checkpoint
+        sparkSession.sparkContext().setCheckpointDir("/temp");
+
         return "Practise udf: User define function.";
     }
 }
