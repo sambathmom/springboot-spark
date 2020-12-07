@@ -25,8 +25,9 @@ public class SparkHotelService {
 
     public String transformHotelDataSpark() {
         Dataset<Row> hotels = sparkSession.sql("SELECT * FROM hotels LIMIT 1");
-        hotels.show(5);
+        hotels.show(1);
 
+        //===== transform data
         Dataset<Row> hotelDF = hotels
                 .withColumn("hotel", functions.explode(hotels.col("hotels")))
                 .drop("auditData")
@@ -35,6 +36,7 @@ public class SparkHotelService {
                 .drop("hotels")
                 .drop("to")
                 .drop("total");
+        hotelDF.show();
         hotelDF = hotelDF
                     .withColumn("categoryGroupCode", hotelDF.col("hotel.categoryGroupCode"))
                     .withColumn("code", hotelDF.col("hotel.code"))
