@@ -1,8 +1,23 @@
 [
   {
-    "name" : "DataTest12",
-    "population" : 340000
+    "name" : "DataTest1",
+    "population" : 340000,
+    "code" : "C001"
+  },
+  {
+    "name" : "DataTest2",
+    "population" : 1000,
+    "code" : "C002"
+  },
+  {
+    "name" : "DataTest3",
+    "population" : 13100,
+    "code" : "C003"
+  },
+  {
+    "name": "DataTest1",
+    "population": 340000,
+    "code" : "C004"
   }
-
 
 ]

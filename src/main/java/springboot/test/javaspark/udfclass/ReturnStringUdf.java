@@ -1,4 +1,4 @@
-package springboot.test.javaspark.interfaces;
+package springboot.test.javaspark.udfclass;
 
 import org.apache.spark.sql.api.java.UDF0;
 import springboot.test.javaspark.service.ReturnStringUdfService;
